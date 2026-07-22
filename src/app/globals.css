@@ -1,19 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #f5f5f5;
+  --background: #07080b;
+  --background-soft: #0d1016;
+  --surface: #11151d;
+  --surface-hover: #171c26;
+  --surface-elevated: #1a202b;
 
-  /* Blau */
+  --foreground: #f8fafc;
+  --foreground-muted: #a8b0bf;
+  --foreground-subtle: #717b8d;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
   /*
+   * Akzentfarbe Blau
+   *
+   * Für Lila später ersetzen durch:
+   * --accent: #8b5cf6;
+   * --accent-light: #a78bfa;
+   * --accent-dark: #7c3aed;
+   * --accent-soft: rgba(139, 92, 246, 0.14);
+   * --accent-border: rgba(139, 92, 246, 0.35);
+   */
   --accent: #2563eb;
-  --accent-hover: #3b82f6;
-  --accent-soft: rgba(37, 99, 235, 0.15);
-  */
-  /* Lila */
-  --accent: #7c3aed;
-  --accent-hover: #8b5cf6;
-  --accent-soft: rgba(124, 58, 237, 0.15);
+  --accent-light: #60a5fa;
+  --accent-dark: #1d4ed8;
+  --accent-soft: rgba(37, 99, 235, 0.14);
+  --accent-border: rgba(37, 99, 235, 0.35);
+
+  --danger: #ef4444;
+
+  --container-width: 80rem;
+  --header-height: 5rem;
+}
+
+@theme inline {
+  --color-page: var(--background);
+  --color-page-soft: var(--background-soft);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-elevated: var(--surface-elevated);
+
+  --color-content: var(--foreground);
+  --color-muted: var(--foreground-muted);
+  --color-subtle: var(--foreground-subtle);
+
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-border: var(--accent-border);
 }
 
 * {
@@ -22,11 +63,72 @@
 
 html {
   scroll-behavior: smooth;
+  background: var(--background);
 }
 
 body {
+  min-height: 100vh;
   margin: 0;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+}
+
+::selection {
+  background: var(--accent);
+  color: white;
+}
+
+.site-container {
+  width: min(100% - 2rem, var(--container-width));
+  margin-inline: auto;
+}
+
+.section-spacing {
+  padding-block: 5rem;
+}
+
+.surface-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 1.25rem;
+}
+
+.accent-gradient {
+  background:
+    radial-gradient(
+      circle at 20% 20%,
+      var(--accent-soft),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(255, 255, 255, 0.04),
+      transparent 30%
+    );
+}
+
+@media (min-width: 768px) {
+  .site-container {
+    width: min(100% - 4rem, var(--container-width));
+  }
+
+  .section-spacing {
+    padding-block: 7rem;
+  }
 }
