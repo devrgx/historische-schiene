@@ -25,6 +25,10 @@ export const mainNavigation: NavigationItem[] = [
     href: "/mitmachen",
   },
   {
+    label: "Dokumente",
+    href: "/dokumente",
+  },
+  {
     label: "Kontakt",
     href: "/kontakt",
   },
@@ -57,6 +61,10 @@ export const footerNavigation = {
     {
       label: "Kontakt",
       href: "/kontakt",
+    },
+    {
+      label: "Dokumente",
+      href: "/dokumente",
     },
   ],
   rechtliches: [
