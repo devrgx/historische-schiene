@@ -8,9 +8,13 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import Link from "next/link";
 
+import { LatestNews } from "@/components/home/latest-news";
 import { ButtonLink } from "@/components/ui/button-link";
 import { SectionHeading } from "@/components/ui/section-heading";
+
+export const dynamic = "force-dynamic";
 
 const features = [
   {
@@ -158,7 +162,7 @@ export default function HomePage() {
               const Icon = item.icon;
 
               return (
-                <a
+                <Link
                   key={item.href}
                   href={item.href}
                   className="group surface-card flex gap-5 p-6 transition duration-300 hover:border-accent-border hover:bg-surface-hover"
@@ -183,12 +187,14 @@ export default function HomePage() {
                       {item.description}
                     </p>
                   </div>
-                </a>
+                </Link>
               );
             })}
           </div>
         </div>
       </section>
+
+      <LatestNews />
 
       <section className="section-spacing">
         <div className="site-container">
