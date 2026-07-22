@@ -13,6 +13,10 @@ export const mainNavigation: NavigationItem[] = [
     href: "/projekte",
   },
   {
+    label: "Partner",
+    href: "/partner",
+  },
+  {
     label: "Sonderfahrten",
     href: "/sonderfahrten",
   },
@@ -47,6 +51,10 @@ export const footerNavigation = {
     {
       label: "Aktuelles",
       href: "/aktuelles",
+    },
+    {
+      label: "Partner und Kooperationen",
+      href: "/partner",
     },
   ],
   mitmachen: [
