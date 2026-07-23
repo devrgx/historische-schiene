@@ -13,11 +13,16 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 
 const scrypt = promisify(scryptCallback);
-const SESSION_COOKIE_NAME = "historische-schiene-session";
-const SESSION_DURATION_SECONDS = 60 * 60 * 12;
+
+const SESSION_COOKIE_NAME =
+  "historische-schiene-session";
+
+const SESSION_DURATION_SECONDS =
+  60 * 60 * 12;
 
 type SessionPayload = {
   userId: number;
+  sessionVersion: number;
   expiresAt: number;
 };
 
@@ -41,12 +46,17 @@ function getSessionSecret(): string {
 }
 
 function sign(value: string): string {
-  return createHmac("sha256", getSessionSecret())
+  return createHmac(
+    "sha256",
+    getSessionSecret(),
+  )
     .update(value)
     .digest("base64url");
 }
 
-function encodeSession(payload: SessionPayload): string {
+function encodeSession(
+  payload: SessionPayload,
+): string {
   const encodedPayload = Buffer.from(
     JSON.stringify(payload),
     "utf8",
@@ -55,46 +65,82 @@ function encodeSession(payload: SessionPayload): string {
   return `${encodedPayload}.${sign(encodedPayload)}`;
 }
 
-function decodeSession(value: string): SessionPayload | null {
-  const [encodedPayload, signature] = value.split(".");
+function decodeSession(
+  value: string,
+): SessionPayload | null {
+  const [encodedPayload, signature] =
+    value.split(".");
 
   if (!encodedPayload || !signature) {
     return null;
   }
 
-  const expectedSignature = sign(encodedPayload);
-  const receivedBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expectedSignature);
+  const expectedSignature =
+    sign(encodedPayload);
+
+  const receivedBuffer =
+    Buffer.from(signature);
+
+  const expectedBuffer =
+    Buffer.from(expectedSignature);
 
   if (
-    receivedBuffer.length !== expectedBuffer.length ||
-    !timingSafeEqual(receivedBuffer, expectedBuffer)
+    receivedBuffer.length !==
+      expectedBuffer.length ||
+    !timingSafeEqual(
+      receivedBuffer,
+      expectedBuffer,
+    )
   ) {
     return null;
   }
 
   try {
     const payload = JSON.parse(
-      Buffer.from(encodedPayload, "base64url").toString("utf8"),
-    ) as SessionPayload;
+      Buffer.from(
+        encodedPayload,
+        "base64url",
+      ).toString("utf8"),
+    ) as Partial<SessionPayload>;
 
     if (
       !Number.isInteger(payload.userId) ||
-      !Number.isInteger(payload.expiresAt) ||
-      payload.expiresAt <= Date.now()
+      !Number.isInteger(
+        payload.sessionVersion,
+      ) ||
+      !Number.isInteger(
+        payload.expiresAt,
+      ) ||
+      Number(payload.expiresAt) <= Date.now()
     ) {
       return null;
     }
 
-    return payload;
+    return {
+      userId: Number(payload.userId),
+      sessionVersion: Number(
+        payload.sessionVersion,
+      ),
+      expiresAt: Number(
+        payload.expiresAt,
+      ),
+    };
   } catch {
     return null;
   }
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(16).toString("hex");
-  const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
+export async function hashPassword(
+  password: string,
+): Promise<string> {
+  const salt =
+    randomBytes(16).toString("hex");
+
+  const derivedKey = (await scrypt(
+    password,
+    salt,
+    64,
+  )) as Buffer;
 
   return `scrypt$${salt}$${derivedKey.toString("hex")}`;
 }
@@ -103,19 +149,34 @@ export async function verifyPassword(
   password: string,
   storedHash: string,
 ): Promise<boolean> {
-  const [algorithm, salt, hash] = storedHash.split("$");
+  const [algorithm, salt, hash] =
+    storedHash.split("$");
 
-  if (algorithm !== "scrypt" || !salt || !hash) {
+  if (
+    algorithm !== "scrypt" ||
+    !salt ||
+    !hash
+  ) {
     return false;
   }
 
   try {
-    const derivedKey = (await scrypt(password, salt, 64)) as Buffer;
-    const storedBuffer = Buffer.from(hash, "hex");
+    const derivedKey = (await scrypt(
+      password,
+      salt,
+      64,
+    )) as Buffer;
+
+    const storedBuffer =
+      Buffer.from(hash, "hex");
 
     return (
-      storedBuffer.length === derivedKey.length &&
-      timingSafeEqual(storedBuffer, derivedKey)
+      storedBuffer.length ===
+        derivedKey.length &&
+      timingSafeEqual(
+        storedBuffer,
+        derivedKey,
+      )
     );
   } catch {
     return false;
@@ -126,34 +187,40 @@ export async function authenticateUser(
   email: string,
   password: string,
 ): Promise<AuthenticatedUser | null> {
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail =
+    email.trim().toLowerCase();
 
   if (!normalizedEmail || !password) {
     return null;
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      email: normalizedEmail,
-    },
-    include: {
-      roles: {
-        include: {
-          role: {
-            select: {
-              key: true,
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        email: normalizedEmail,
+      },
+
+      include: {
+        roles: {
+          include: {
+            role: {
+              select: {
+                key: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
 
   if (
     !user ||
     user.status !== "ACTIVE" ||
     !user.passwordHash ||
-    !(await verifyPassword(password, user.passwordHash))
+    !(await verifyPassword(
+      password,
+      user.passwordHash,
+    ))
   ) {
     return null;
   }
@@ -162,55 +229,113 @@ export async function authenticateUser(
     id: user.id,
     email: user.email,
     displayName: user.displayName,
-    roleKeys: user.roles.map(({ role }) => role.key),
+    roleKeys: user.roles.map(
+      ({ role }) => role.key,
+    ),
   };
 }
 
-export async function createSession(userId: number): Promise<void> {
-  const expiresAt = Date.now() + SESSION_DURATION_SECONDS * 1000;
-  const cookieStore = await cookies();
+export async function createSession(
+  userId: number,
+): Promise<void> {
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
 
-  cookieStore.set(SESSION_COOKIE_NAME, encodeSession({ userId, expiresAt }), {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: SESSION_DURATION_SECONDS,
-  });
+      select: {
+        id: true,
+        status: true,
+        sessionVersion: true,
+      },
+    });
+
+  if (
+    !user ||
+    user.status !== "ACTIVE"
+  ) {
+    throw new Error(
+      "Für dieses Benutzerkonto kann keine Sitzung erstellt werden.",
+    );
+  }
+
+  const expiresAt =
+    Date.now() +
+    SESSION_DURATION_SECONDS * 1_000;
+
+  const cookieStore =
+    await cookies();
+
+  const sessionValue =
+    encodeSession({
+      userId: user.id,
+      sessionVersion:
+        user.sessionVersion,
+      expiresAt,
+    });
+
+  cookieStore.set(
+    SESSION_COOKIE_NAME,
+    sessionValue,
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure:
+        process.env.NODE_ENV ===
+        "production",
+      path: "/",
+      maxAge:
+        SESSION_DURATION_SECONDS,
+    },
+  );
 }
 
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+  const cookieStore =
+    await cookies();
+
+  const sessionCookie =
+    cookieStore.get(
+      SESSION_COOKIE_NAME,
+    )?.value;
 
   if (!sessionCookie) {
     return null;
   }
 
-  const session = decodeSession(sessionCookie);
+  const session =
+    decodeSession(sessionCookie);
 
   if (!session) {
     return null;
   }
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: session.userId,
-    },
-    include: {
-      roles: {
-        include: {
-          role: {
-            select: {
-              key: true,
+  const user =
+    await prisma.user.findUnique({
+      where: {
+        id: session.userId,
+      },
+
+      include: {
+        roles: {
+          include: {
+            role: {
+              select: {
+                key: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  if (!user || user.status !== "ACTIVE") {
+  if (
+    !user ||
+    user.status !== "ACTIVE" ||
+    user.sessionVersion !==
+      session.sessionVersion
+  ) {
     return null;
   }
 
@@ -218,11 +343,33 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
     id: user.id,
     email: user.email,
     displayName: user.displayName,
-    roleKeys: user.roles.map(({ role }) => role.key),
+    roleKeys: user.roles.map(
+      ({ role }) => role.key,
+    ),
   };
 }
 
 export async function deleteSession(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
+  const cookieStore =
+    await cookies();
+
+  cookieStore.delete(
+    SESSION_COOKIE_NAME,
+  );
+}
+
+export async function invalidateAllUserSessions(
+  userId: number,
+): Promise<void> {
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+
+    data: {
+      sessionVersion: {
+        increment: 1,
+      },
+    },
+  });
 }

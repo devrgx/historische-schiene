@@ -518,14 +518,13 @@ export default async function AdminMemberDetailPage({
               </div>
             )}
 
-            <button
-              type="button"
-              disabled
-              className="mt-5 inline-flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl border border-line bg-page-soft px-4 py-3 text-sm font-semibold text-muted opacity-60"
+            <Link
+              href={`/admin/mitglieder/${member.id}/zugang`}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-page-soft px-4 py-3 text-sm font-semibold text-content transition hover:border-accent-border hover:bg-accent-soft hover:text-accent-light"
             >
               <KeyRound size={17} />
               Zugang verwalten
-            </button>
+            </Link>
           </div>
 
           <PreparedModule

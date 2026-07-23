@@ -59,8 +59,6 @@ const contactAreas = [
       "Für Unternehmen, Vereine, Kommunen und Organisationen, die mit uns zusammenarbeiten möchten.",
     email: "partner@historische-schiene.de",
     icon: Handshake,
-    note:
-      "Ein eigener Partnerbereich mit weiteren Informationen wird später ergänzt.",
   },
   {
     title: "Datenschutz",
@@ -120,7 +118,7 @@ export default function KontaktPage() {
                 description={area.description}
                 email={area.email}
                 icon={area.icon}
-                note={area.note}
+                /* note={area.note} */
               />
             ))}
           </div>

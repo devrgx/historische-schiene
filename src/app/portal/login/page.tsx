@@ -37,7 +37,7 @@ export default async function PortalLoginPage({
 
     const isAdmin = user.roleKeys.includes("ADMIN");
 
-    redirect(isAdmin ? "/admin/" : "/portal/app");
+    redirect(isAdmin ? "/admin" : "/portal/app");
   }
 
   return (
@@ -110,10 +110,18 @@ export default async function PortalLoginPage({
               autoComplete="current-password"
               placeholder="Dein Passwort"
               required
-              minLength={8}
+              minLength={12}
               className="w-full rounded-xl border border-line bg-page-soft py-3 pl-12 pr-4 text-content outline-none transition placeholder:text-subtle focus:border-accent-border focus:ring-2 focus:ring-accent-soft"
             />
           </div>
+        </div>
+        <div className="mt-3 text-right">
+          <Link
+            href="/portal/passwort-vergessen"
+            className="text-sm font-semibold text-muted transition hover:text-accent-light"
+          >
+            Passwort vergessen?
+          </Link>
         </div>
 
         <button
