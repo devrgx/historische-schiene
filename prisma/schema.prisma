@@ -19,9 +19,14 @@ model User {
 
   roles UserRole[]
 
+  activationTokens PortalActivationToken[]
+
   authoredPosts  NewsPost[] @relation("NewsPostAuthor")
   editedPosts    NewsPost[] @relation("NewsPostLastEditor")
   publishedPosts NewsPost[] @relation("NewsPostPublisher")
+
+  reviewedApplications MembershipApplication[] @relation("ApplicationReviewer")
+  applicationHistoryEntries MembershipApplicationHistory[] @relation("ApplicationHistoryActor")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,23 +35,72 @@ model User {
   @@map("users")
 }
 
+model PortalActivationToken {
+  id Int @id @default(autoincrement())
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String @unique
+
+  expiresAt DateTime
+  usedAt    DateTime?
+  revokedAt DateTime?
+
+  createdByUserId Int?
+  createdByName   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
+  @@map("portal_activation_tokens")
+}
+
 model Member {
   id Int @id @default(autoincrement())
 
-  membershipNumber String @unique
-  postalCode       String
+  membershipNumber String         @unique
+  membershipType   MembershipType
 
   firstName String
   lastName  String
+  birthDate DateTime
 
   email String?
   phone String?
 
+  street      String
+  houseNumber String
+  postalCode  String
+  city        String
+  country     String @default("Deutschland")
+
+  occupation           String?
+  railwayQualification String?
+  telegramUsername     String?
+
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  isMinor Boolean @default(false)
+
+  guardianFirstName    String?
+  guardianLastName     String?
+  guardianEmail        String?
+  guardianPhone        String?
+  guardianRelationship String?
+
   joinedAt DateTime?
-  status   MemberStatus @default(ACTIVE)
+  leftAt   DateTime?
+
+  status MemberStatus @default(ACTIVE)
 
   userId Int?  @unique
   user   User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  application MembershipApplication?
 
   functions MemberClubFunction[]
 
@@ -55,6 +109,8 @@ model Member {
 
   @@index([lastName, firstName])
   @@index([status])
+  @@index([membershipType])
+  @@index([postalCode])
   @@map("members")
 }
 
@@ -70,6 +126,17 @@ model ClubFunction {
   updatedAt DateTime @updatedAt
 
   @@map("club_functions")
+}
+
+model NumberSequence {
+  key         String   @id
+  nextValue   Int      @default(1)
+  description String? 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("number_sequences")
 }
 
 model MemberClubFunction {
@@ -223,6 +290,14 @@ enum MembershipApplicationStatus {
   WITHDRAWN
 }
 
+enum MembershipApplicationHistoryAction {
+  REVIEW_STARTED
+  APPROVED
+  REJECTED
+  WITHDRAWN
+  NOTE_ADDED
+}
+
 enum MembershipType {
   REGULAR
   REDUCED
@@ -233,60 +308,69 @@ model MembershipApplication {
   id String @id @default(cuid())
 
   firstName String
-  lastName String
+  lastName  String
   birthDate DateTime
 
   email String
   phone String?
 
-  street String
+  street      String
   houseNumber String
-  postalCode String
-  city String
-  country String @default("Deutschland")
+  postalCode  String
+  city        String
+  country     String @default("Deutschland")
 
   membershipType MembershipType
 
-  occupation String?
+  occupation           String?
   railwayQualification String?
-  telegramUsername String?
+  telegramUsername     String?
 
-  emergencyContactName String?
+  emergencyContactName  String?
   emergencyContactPhone String?
 
   isMinor Boolean @default(false)
 
   guardianFirstName String?
-  guardianLastName String?
-  guardianEmail String?
-  guardianPhone String?
+  guardianLastName  String?
+  guardianEmail     String?
+  guardianPhone     String?
 
-  guardianStreet String?
+  guardianStreet      String?
   guardianHouseNumber String?
-  guardianPostalCode String?
-  guardianCity String?
+  guardianPostalCode  String?
+  guardianCity        String?
 
   guardianRelationship String?
 
-  guardianConsentAccepted Boolean @default(false)
-  guardianAuthorityConfirmed Boolean @default(false)
-  guardianNameConfirmation String?
-  guardianConsentAt DateTime?
+  guardianConsentAccepted    Boolean   @default(false)
+  guardianAuthorityConfirmed Boolean   @default(false)
+  guardianNameConfirmation   String?
+  guardianConsentAt          DateTime?
 
   message String? @db.Text
 
-  privacyAccepted Boolean
-  statutesAccepted Boolean
+  privacyAccepted           Boolean
+  statutesAccepted          Boolean
   contributionRulesAccepted Boolean
 
-  privacyVersion String?
-  statutesVersion String?
+  privacyVersion           String?
+  statutesVersion          String?
   contributionRulesVersion String?
 
   status MembershipApplicationStatus @default(PENDING)
 
-  reviewedAt DateTime?
-  rejectionReason String? @db.Text
+  reviewedById Int?
+  reviewedBy   User? @relation("ApplicationReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  reviewedAt      DateTime?
+  decisionNote    String?   @db.Text
+  rejectionReason String?   @db.Text
+
+  memberId Int?    @unique
+  member   Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
+
+  historyEntries MembershipApplicationHistory[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -295,5 +379,30 @@ model MembershipApplication {
   @@index([createdAt])
   @@index([email])
   @@index([isMinor])
+  @@index([reviewedById])
   @@map("membership_applications")
+}
+
+model MembershipApplicationHistory {
+  id Int @id @default(autoincrement())
+
+  applicationId String
+  application   MembershipApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  action MembershipApplicationHistoryAction
+
+  previousStatus MembershipApplicationStatus?
+  newStatus      MembershipApplicationStatus?
+
+  message String? @db.Text
+
+  actorUserId Int?
+  actorUser   User? @relation("ApplicationHistoryActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([applicationId, createdAt])
+  @@index([actorUserId])
+  @@index([action])
+  @@map("membership_application_history")
 }

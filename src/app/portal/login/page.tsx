@@ -1,20 +1,68 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LockKeyhole, Mail } from "lucide-react";
+import { redirect } from "next/navigation";
+import { CircleAlert, LockKeyhole, Mail } from "lucide-react";
 
 import { PortalShell } from "@/components/portal/portal-shell";
+import { authenticateUser, createSession } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "Anmelden",
 };
 
-export default function PortalLoginPage() {
+type PortalLoginPageProps = {
+  searchParams: Promise<{
+    error?: string;
+  }>;
+};
+
+export default async function PortalLoginPage({
+  searchParams,
+}: PortalLoginPageProps) {
+  const { error } = await searchParams;
+
+  async function loginAction(formData: FormData) {
+    "use server";
+
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+
+    const user = await authenticateUser(email, password);
+
+    if (!user) {
+      redirect("/portal/login?error=invalid-credentials");
+    }
+
+    await createSession(user.id);
+
+    const isAdmin = user.roleKeys.includes("ADMIN");
+
+    redirect(isAdmin ? "/admin/" : "/portal/app");
+  }
+
   return (
     <PortalShell
       title="Im Mitgliederportal anmelden"
-      description="Die Anmeldung wird im nächsten Schritt mit der lokalen MariaDB und sicheren Sitzungen verbunden."
+      description="Melde dich mit der E-Mail-Adresse und dem Passwort deines Vereinskontos an."
     >
-      <form className="surface-card mx-auto max-w-xl p-7 sm:p-9">
+      <form
+        action={loginAction}
+        className="surface-card mx-auto max-w-xl p-7 sm:p-9"
+      >
+        {error === "invalid-credentials" ? (
+          <div
+            role="alert"
+            className="mb-6 flex gap-3 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200"
+          >
+            <CircleAlert size={19} className="mt-0.5 shrink-0" />
+
+            <p>
+              Die E-Mail-Adresse oder das Passwort ist falsch. Das Konto muss
+              außerdem aktiviert sein.
+            </p>
+          </div>
+        ) : null}
+
         <div>
           <label
             htmlFor="login-email"
@@ -35,6 +83,7 @@ export default function PortalLoginPage() {
               type="email"
               autoComplete="email"
               placeholder="name@beispiel.de"
+              required
               className="w-full rounded-xl border border-line bg-page-soft py-3 pl-12 pr-4 text-content outline-none transition placeholder:text-subtle focus:border-accent-border focus:ring-2 focus:ring-accent-soft"
             />
           </div>
@@ -60,17 +109,18 @@ export default function PortalLoginPage() {
               type="password"
               autoComplete="current-password"
               placeholder="Dein Passwort"
+              required
+              minLength={8}
               className="w-full rounded-xl border border-line bg-page-soft py-3 pl-12 pr-4 text-content outline-none transition placeholder:text-subtle focus:border-accent-border focus:ring-2 focus:ring-accent-soft"
             />
           </div>
         </div>
 
         <button
-          type="button"
-          disabled
-          className="mt-7 inline-flex w-full cursor-not-allowed items-center justify-center rounded-lg bg-surface-elevated px-5 py-3 font-semibold text-subtle"
+          type="submit"
+          className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-accent px-5 py-3 font-semibold text-white transition hover:bg-accent-hover focus:outline-none focus:ring-2 focus:ring-accent-soft"
         >
-          Anmeldung folgt
+          Anmelden
         </button>
 
         <p className="mt-6 text-center text-sm text-muted">
