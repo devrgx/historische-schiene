@@ -214,3 +214,86 @@ enum NewsStatus {
   PUBLISHED
   ARCHIVED
 }
+
+enum MembershipApplicationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+enum MembershipType {
+  REGULAR
+  REDUCED
+  SUPPORTING
+}
+
+model MembershipApplication {
+  id String @id @default(cuid())
+
+  firstName String
+  lastName String
+  birthDate DateTime
+
+  email String
+  phone String?
+
+  street String
+  houseNumber String
+  postalCode String
+  city String
+  country String @default("Deutschland")
+
+  membershipType MembershipType
+
+  occupation String?
+  railwayQualification String?
+  telegramUsername String?
+
+  emergencyContactName String?
+  emergencyContactPhone String?
+
+  isMinor Boolean @default(false)
+
+  guardianFirstName String?
+  guardianLastName String?
+  guardianEmail String?
+  guardianPhone String?
+
+  guardianStreet String?
+  guardianHouseNumber String?
+  guardianPostalCode String?
+  guardianCity String?
+
+  guardianRelationship String?
+
+  guardianConsentAccepted Boolean @default(false)
+  guardianAuthorityConfirmed Boolean @default(false)
+  guardianNameConfirmation String?
+  guardianConsentAt DateTime?
+
+  message String? @db.Text
+
+  privacyAccepted Boolean
+  statutesAccepted Boolean
+  contributionRulesAccepted Boolean
+
+  privacyVersion String?
+  statutesVersion String?
+  contributionRulesVersion String?
+
+  status MembershipApplicationStatus @default(PENDING)
+
+  reviewedAt DateTime?
+  rejectionReason String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
+  @@index([isMinor])
+  @@map("membership_applications")
+}

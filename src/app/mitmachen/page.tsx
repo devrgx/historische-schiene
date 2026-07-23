@@ -5,7 +5,6 @@ import {
   BookOpen,
   CalendarCheck,
   Camera,
-  Check,
   CircleAlert,
   ClipboardCheck,
   FileSignature,
@@ -43,7 +42,7 @@ const memberships = [
     features: [
       "Teilnahme an Mitgliederversammlungen",
       "Stimmrecht entsprechend der Satzung",
-      "Zugang zum späteren Mitgliederportal",
+      "Zugang zum Mitgliederportal",
       "Teilnahme an internen Veranstaltungen",
       "Möglichkeit zur aktiven Projektmitarbeit",
     ],
@@ -166,21 +165,21 @@ const joiningSteps = [
     icon: UserCheck,
   },
   {
-    title: "Antrag ausfüllen",
+    title: "Antrag online ausfüllen",
     description:
-      "Der digitale Mitgliedsantrag wird später direkt über diese Website bereitgestellt.",
+      "Der digitale Mitgliedsantrag wird direkt über unsere Website ausgefüllt und sicher gespeichert.",
     icon: FileSignature,
   },
   {
     title: "Antrag wird geprüft",
     description:
-      "Der Vorstand prüft den Antrag nach den Bestimmungen der Satzung.",
+      "Die Mitgliederverwaltung prüft den Antrag. Bei Minderjährigen wird zusätzlich die Zustimmung eines Sorgeberechtigten benötigt.",
     icon: ClipboardCheck,
   },
   {
-    title: "Aufnahme und Mitgliedsnummer",
+    title: "Aufnahme und Portalzugang",
     description:
-      "Nach erfolgreicher Aufnahme erhältst du deine Mitgliedsnummer und weitere Informationen.",
+      "Nach erfolgreicher Aufnahme erhältst du deine Mitgliedsnummer und kannst deinen Zugang zum Mitgliederportal aktivieren.",
     icon: ShieldCheck,
   },
 ];
@@ -204,14 +203,14 @@ export default function MitmachenPage() {
 
             <div>
               <h2 className="font-semibold text-content">
-                Mitgliedschaft noch in Vorbereitung
+                Mitgliedschaft in der Testphase
               </h2>
 
               <p className="mt-2 text-sm leading-7 text-muted">
-                Die Historische Schiene befindet sich derzeit in der Aufbau-
-                und Gründungsphase. Mitgliedschaften, Beiträge und
-                Aufnahmeverfahren werden erst nach der Vereinsgründung und den
-                notwendigen Beschlüssen verbindlich angeboten.
+                Der digitale Mitgliedsantrag kann bereits lokal getestet
+                werden. Verbindliche Mitgliedschaften entstehen erst nach der
+                Vereinsgründung, den notwendigen Beschlüssen und der
+                Genehmigung durch die zuständige Mitgliederverwaltung.
               </p>
             </div>
           </div>
@@ -264,10 +263,7 @@ export default function MitmachenPage() {
                 className="mt-7"
               >
                 Mitgliedschaften ansehen
-                <ArrowRight
-                  size={18}
-                  className="ml-2"
-                />
+                <ArrowRight size={18} className="ml-2" />
               </ButtonLink>
             </div>
           </div>
@@ -398,8 +394,9 @@ export default function MitmachenPage() {
               </h3>
 
               <p className="mt-3 leading-7 text-muted">
-                Für Mitgliedschaft und bestimmte Aktivitäten ist die
-                Zustimmung der Erziehungsberechtigten erforderlich.
+                Bei minderjährigen Antragstellern sind ein Notfallkontakt und
+                die ausdrückliche Zustimmung eines Sorgeberechtigten
+                erforderlich.
               </p>
             </article>
           </div>
@@ -419,8 +416,8 @@ export default function MitmachenPage() {
         <div className="site-container">
           <SectionHeading
             eyebrow="Aufnahmeverfahren"
-            title="So läuft der Beitritt künftig ab"
-            description="Der Mitgliedsantrag wird später digital und alternativ als herunterladbares Dokument angeboten."
+            title="So läuft der Beitritt ab"
+            description="Der Mitgliedsantrag kann direkt online ausgefüllt werden. Nach der Prüfung und Aufnahme wird der Zugang zum Mitgliederportal aktiviert."
             centered
           />
 
@@ -462,22 +459,27 @@ export default function MitmachenPage() {
             />
 
             <h2 className="mt-6 text-3xl font-bold text-content">
-              Digitaler Mitgliedsantrag folgt
+              Digitaler Mitgliedsantrag
             </h2>
 
             <p className="mx-auto mt-4 max-w-2xl leading-8 text-muted">
-              Der Mitgliedsantrag ist noch nicht freigeschaltet. Nach der
-              Vereinsgründung wird hier ein sicheres Onlineformular
-              bereitgestellt.
+              Stelle deinen Mitgliedsantrag direkt online. Deine Angaben
+              werden zunächst gespeichert und anschließend durch die
+              Mitgliederverwaltung geprüft.
             </p>
 
-            <button
-              type="button"
-              disabled
-              className="mt-7 cursor-not-allowed rounded-lg bg-surface px-6 py-3 text-sm font-semibold text-subtle"
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-subtle">
+              Bei minderjährigen Antragstellern werden zusätzlich die Angaben
+              und die Zustimmung eines Sorgeberechtigten benötigt.
+            </p>
+
+            <ButtonLink
+              href="/mitmachen/antrag"
+              className="mt-7"
             >
-              Antrag noch nicht verfügbar
-            </button>
+              Mitgliedsantrag starten
+              <ArrowRight size={18} className="ml-2" />
+            </ButtonLink>
           </div>
         </div>
       </section>
@@ -505,10 +507,7 @@ export default function MitmachenPage() {
                 className="mt-7"
               >
                 Kontakt aufnehmen
-                <Mail
-                  size={18}
-                  className="ml-2"
-                />
+                <Mail size={18} className="ml-2" />
               </ButtonLink>
             </article>
 
@@ -527,15 +526,9 @@ export default function MitmachenPage() {
                 Restaurierungsanlage.
               </p>
 
-              <ButtonLink
-                href="/projekte"
-                className="mt-7"
-              >
+              <ButtonLink href="/projekte" className="mt-7">
                 Projekte entdecken
-                <ArrowRight
-                  size={18}
-                  className="ml-2"
-                />
+                <ArrowRight size={18} className="ml-2" />
               </ButtonLink>
             </article>
           </div>

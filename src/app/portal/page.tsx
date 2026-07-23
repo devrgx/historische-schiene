@@ -1,90 +1,50 @@
 import type { Metadata } from "next";
 import {
-  CalendarDays,
-  Construction,
-  Newspaper,
-  Settings,
-  UserRound,
-  UsersRound,
+  ClipboardList,
+  LogIn,
+  UserRoundPlus,
 } from "lucide-react";
 
-import { ButtonLink } from "@/components/ui/button-link";
+import { PortalCard } from "@/components/portal/portal-card";
+import { PortalShell } from "@/components/portal/portal-shell";
 
 export const metadata: Metadata = {
   title: "Mitgliederportal",
   description:
-    "Das Mitgliederportal der Historischen Schiene befindet sich im Aufbau.",
+    "Anmeldung, Registrierung und Mitgliedsantrag der Historischen Schiene.",
 };
-
-const plannedFeatures = [
-  {
-    label: "Neuigkeiten",
-    icon: Newspaper,
-  },
-  {
-    label: "Kalender",
-    icon: CalendarDays,
-  },
-  {
-    label: "Aktivitäten",
-    icon: UsersRound,
-  },
-  {
-    label: "Mitglieder",
-    icon: UserRound,
-  },
-  {
-    label: "Einstellungen",
-    icon: Settings,
-  },
-];
 
 export default function PortalPage() {
   return (
-    <section className="accent-gradient min-h-[calc(100vh-5rem)]">
-      <div className="site-container flex min-h-[calc(100vh-5rem)] items-center justify-center py-20">
-        <div className="w-full max-w-3xl rounded-3xl border border-line bg-surface/90 p-8 text-center shadow-2xl shadow-black/30 backdrop-blur sm:p-12">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-soft text-accent-light">
-            <Construction size={30} />
-          </div>
+    <PortalShell
+      title="Willkommen im Mitgliederportal"
+      description="Hier können Mitglieder ihr Konto aktivieren, sich anmelden und später Mitgliedsdaten, Dokumente, Rechnungen und Vereinsinformationen verwalten."
+    >
+      <div className="grid gap-6 md:grid-cols-3">
+        <PortalCard
+          title="Anmelden"
+          description="Für Mitglieder, die ihr Benutzerkonto bereits aktiviert und ein Passwort festgelegt haben."
+          href="/portal/login"
+          label="Zum Login"
+          icon={LogIn}
+        />
 
-          <p className="mt-7 text-sm font-semibold uppercase tracking-[0.22em] text-accent-light">
-            Bereich im Aufbau
-          </p>
+        <PortalCard
+          title="Konto aktivieren"
+          description="Nach der Genehmigung deines Mitgliedsantrags kannst du hier deinen persönlichen Portalzugang einrichten."
+          href="/portal/registrieren"
+          label="Konto registrieren"
+          icon={UserRoundPlus}
+        />
 
-          <h1 className="mt-4 text-4xl font-bold tracking-tight text-content sm:text-5xl">
-            Mitgliederportal
-          </h1>
-
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted">
-            Unser interner Mitgliederbereich wird derzeit entwickelt. Nach
-            seiner Freischaltung können sich ausschließlich bestehende
-            Vereinsmitglieder registrieren.
-          </p>
-
-          <div className="mt-9 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {plannedFeatures.map((feature) => {
-              const Icon = feature.icon;
-
-              return (
-                <div
-                  key={feature.label}
-                  className="flex items-center gap-3 rounded-xl border border-line bg-white/5 px-4 py-3 text-left text-sm text-muted"
-                >
-                  <Icon size={18} className="text-accent-light" />
-                  {feature.label}
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-10">
-            <ButtonLink href="/" variant="secondary">
-              Zurück zur Startseite
-            </ButtonLink>
-          </div>
-        </div>
+        <PortalCard
+          title="Mitglied werden"
+          description="Noch kein Mitglied? Stelle zunächst einen digitalen Mitgliedsantrag."
+          href="/mitmachen/antrag"
+          label="Zum Mitgliedsantrag"
+          icon={ClipboardList}
+        />
       </div>
-    </section>
+    </PortalShell>
   );
 }
