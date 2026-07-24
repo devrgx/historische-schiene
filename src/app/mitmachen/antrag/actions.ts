@@ -2,6 +2,10 @@
 
 import { redirect } from "next/navigation";
 
+import {
+  MembershipType,
+} from "@/generated/prisma/client";
+
 import { prisma } from "@/lib/prisma";
 
 export type MembershipApplicationState = {
@@ -11,9 +15,8 @@ export type MembershipApplicationState = {
 };
 
 const validMembershipTypes = [
-  "REGULAR",
-  "REDUCED",
-  "SUPPORTING",
+  MembershipType.ADULT,
+  MembershipType.REDUCED,
 ] as const;
 
 type ValidMembershipType =
@@ -23,7 +26,8 @@ function getString(
   formData: FormData,
   name: string,
 ): string {
-  const value = formData.get(name);
+  const value =
+    formData.get(name);
 
   return typeof value === "string"
     ? value.trim()
@@ -34,31 +38,54 @@ function getOptionalString(
   formData: FormData,
   name: string,
 ): string | null {
-  const value = getString(formData, name);
+  const value =
+    getString(
+      formData,
+      name,
+    );
 
-  return value.length > 0 ? value : null;
+  return value.length > 0
+    ? value
+    : null;
 }
 
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+function isValidEmail(
+  value: string,
+): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+    value,
+  );
 }
 
 function isValidGermanPostalCode(
   value: string,
 ): boolean {
-  return /^\d{5}$/.test(value);
+  return /^\d{5}$/.test(
+    value,
+  );
 }
 
 function parseBirthDate(
   value: string,
 ): Date | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(
+      value,
+    )
+  ) {
     return null;
   }
 
-  const date = new Date(`${value}T00:00:00.000Z`);
+  const date =
+    new Date(
+      `${value}T00:00:00.000Z`,
+    );
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
     return null;
   }
 
@@ -66,12 +93,17 @@ function parseBirthDate(
     expectedYear,
     expectedMonth,
     expectedDay,
-  ] = value.split("-").map(Number);
+  ] = value
+    .split("-")
+    .map(Number);
 
   if (
-    date.getUTCFullYear() !== expectedYear ||
-    date.getUTCMonth() + 1 !== expectedMonth ||
-    date.getUTCDate() !== expectedDay
+    date.getUTCFullYear() !==
+      expectedYear ||
+    date.getUTCMonth() + 1 !==
+      expectedMonth ||
+    date.getUTCDate() !==
+      expectedDay
   ) {
     return null;
   }
@@ -116,64 +148,78 @@ export async function submitMembershipApplication(
   _previousState: MembershipApplicationState,
   formData: FormData,
 ): Promise<MembershipApplicationState> {
-  const firstName = getString(
-    formData,
-    "firstName",
-  );
+  const firstName =
+    getString(
+      formData,
+      "firstName",
+    );
 
-  const lastName = getString(
-    formData,
-    "lastName",
-  );
+  const lastName =
+    getString(
+      formData,
+      "lastName",
+    );
 
-  const birthDateValue = getString(
-    formData,
-    "birthDate",
-  );
+  const birthDateValue =
+    getString(
+      formData,
+      "birthDate",
+    );
 
-  const birthDate = parseBirthDate(
-    birthDateValue,
-  );
+  const birthDate =
+    parseBirthDate(
+      birthDateValue,
+    );
 
-  const email = getString(
-    formData,
-    "email",
-  ).toLowerCase();
+  const email =
+    getString(
+      formData,
+      "email",
+    ).toLowerCase();
 
-  const phone = getOptionalString(
-    formData,
-    "phone",
-  );
+  const phone =
+    getOptionalString(
+      formData,
+      "phone",
+    );
 
-  const street = getString(
-    formData,
-    "street",
-  );
+  const street =
+    getString(
+      formData,
+      "street",
+    );
 
-  const houseNumber = getString(
-    formData,
-    "houseNumber",
-  );
+  const houseNumber =
+    getString(
+      formData,
+      "houseNumber",
+    );
 
-  const postalCode = getString(
-    formData,
-    "postalCode",
-  );
+  const postalCode =
+    getString(
+      formData,
+      "postalCode",
+    );
 
-  const city = getString(
-    formData,
-    "city",
-  );
+  const city =
+    getString(
+      formData,
+      "city",
+    );
 
   const membershipType =
     parseMembershipType(
-      getString(formData, "membershipType"),
+      getString(
+        formData,
+        "membershipType",
+      ),
     );
 
-  const occupation = getOptionalString(
-    formData,
-    "occupation",
-  );
+  const occupation =
+    getOptionalString(
+      formData,
+      "occupation",
+    );
 
   const railwayQualification =
     getOptionalString(
@@ -218,7 +264,9 @@ export async function submitMembershipApplication(
     );
 
   const guardianEmail =
-    guardianEmailValue?.toLowerCase() ?? null;
+    guardianEmailValue
+      ?.toLowerCase() ??
+    null;
 
   const guardianPhone =
     getOptionalString(
@@ -239,38 +287,51 @@ export async function submitMembershipApplication(
     );
 
   const guardianConsentAccepted =
-    formData.get("guardianConsentAccepted") ===
-    "on";
+    formData.get(
+      "guardianConsentAccepted",
+    ) === "on";
 
   const guardianAuthorityConfirmed =
     formData.get(
       "guardianAuthorityConfirmed",
     ) === "on";
 
-  const message = getOptionalString(
-    formData,
-    "message",
-  );
+  const message =
+    getOptionalString(
+      formData,
+      "message",
+    );
 
   const privacyAccepted =
-    formData.get("privacyAccepted") === "on";
+    formData.get(
+      "privacyAccepted",
+    ) === "on";
 
   const statutesAccepted =
-    formData.get("statutesAccepted") === "on";
+    formData.get(
+      "statutesAccepted",
+    ) === "on";
 
   const contributionRulesAccepted =
     formData.get(
       "contributionRulesAccepted",
     ) === "on";
 
-  const errors: Record<string, string> = {};
+  const errors: Record<
+    string,
+    string
+  > = {};
 
-  if (firstName.length < 2) {
+  if (
+    firstName.length < 2
+  ) {
     errors.firstName =
       "Bitte gib deinen Vornamen an.";
   }
 
-  if (lastName.length < 2) {
+  if (
+    lastName.length < 2
+  ) {
     errors.lastName =
       "Bitte gib deinen Nachnamen an.";
   }
@@ -280,44 +341,67 @@ export async function submitMembershipApplication(
       "Bitte gib ein gültiges Geburtsdatum an.";
   }
 
-  const age = birthDate
-    ? calculateAge(birthDate)
-    : null;
+  const age =
+    birthDate
+      ? calculateAge(
+          birthDate,
+        )
+      : null;
 
-  if (age !== null && age < 0) {
+  if (
+    age !== null &&
+    age < 0
+  ) {
     errors.birthDate =
       "Das Geburtsdatum darf nicht in der Zukunft liegen.";
   }
 
-  if (age !== null && age > 120) {
+  if (
+    age !== null &&
+    age > 120
+  ) {
     errors.birthDate =
       "Bitte prüfe das angegebene Geburtsdatum.";
   }
 
   const isMinor =
-    age !== null && age >= 0 && age < 18;
+    age !== null &&
+    age >= 0 &&
+    age < 18;
 
-  if (!isValidEmail(email)) {
+  if (
+    !isValidEmail(email)
+  ) {
     errors.email =
       "Bitte gib eine gültige E-Mail-Adresse an.";
   }
 
-  if (street.length < 2) {
+  if (
+    street.length < 2
+  ) {
     errors.street =
       "Bitte gib deine Straße an.";
   }
 
-  if (houseNumber.length < 1) {
+  if (
+    houseNumber.length < 1
+  ) {
     errors.houseNumber =
       "Bitte gib deine Hausnummer an.";
   }
 
-  if (!isValidGermanPostalCode(postalCode)) {
+  if (
+    !isValidGermanPostalCode(
+      postalCode,
+    )
+  ) {
     errors.postalCode =
       "Bitte gib eine fünfstellige Postleitzahl an.";
   }
 
-  if (city.length < 2) {
+  if (
+    city.length < 2
+  ) {
     errors.city =
       "Bitte gib deinen Wohnort an.";
   }
@@ -328,110 +412,147 @@ export async function submitMembershipApplication(
   }
 
   if (isMinor) {
-    if (!emergencyContactName) {
+    if (
+      !emergencyContactName
+    ) {
       errors.emergencyContactName =
         "Bei Minderjährigen ist ein Notfallkontakt erforderlich.";
     }
 
-    if (!emergencyContactPhone) {
+    if (
+      !emergencyContactPhone
+    ) {
       errors.emergencyContactPhone =
         "Bitte gib die Telefonnummer des Notfallkontakts an.";
     }
 
-    if (!guardianFirstName) {
+    if (
+      !guardianFirstName
+    ) {
       errors.guardianFirstName =
         "Bitte gib den Vornamen des Sorgeberechtigten an.";
     }
 
-    if (!guardianLastName) {
+    if (
+      !guardianLastName
+    ) {
       errors.guardianLastName =
         "Bitte gib den Nachnamen des Sorgeberechtigten an.";
     }
 
     if (
       !guardianEmail ||
-      !isValidEmail(guardianEmail)
+      !isValidEmail(
+        guardianEmail,
+      )
     ) {
       errors.guardianEmail =
         "Bitte gib eine gültige E-Mail-Adresse des Sorgeberechtigten an.";
     }
 
-    if (!guardianPhone) {
+    if (
+      !guardianPhone
+    ) {
       errors.guardianPhone =
         "Bitte gib eine Telefonnummer des Sorgeberechtigten an.";
     }
 
-    if (!guardianRelationship) {
+    if (
+      !guardianRelationship
+    ) {
       errors.guardianRelationship =
         "Bitte gib das Verhältnis zur minderjährigen Person an.";
     }
 
-    if (!guardianNameConfirmation) {
+    if (
+      !guardianNameConfirmation
+    ) {
       errors.guardianNameConfirmation =
         "Bitte bestätige den vollständigen Namen des Sorgeberechtigten.";
     }
 
-    if (!guardianConsentAccepted) {
+    if (
+      !guardianConsentAccepted
+    ) {
       errors.guardianConsentAccepted =
         "Die Zustimmung zur Mitgliedschaft ist erforderlich.";
     }
 
-    if (!guardianAuthorityConfirmed) {
+    if (
+      !guardianAuthorityConfirmed
+    ) {
       errors.guardianAuthorityConfirmed =
         "Die Sorgeberechtigung muss bestätigt werden.";
     }
   }
 
-  if (!privacyAccepted) {
+  if (
+    !privacyAccepted
+  ) {
     errors.privacyAccepted =
       "Die Datenschutzerklärung muss bestätigt werden.";
   }
 
-  if (!statutesAccepted) {
+  if (
+    !statutesAccepted
+  ) {
     errors.statutesAccepted =
       "Die Satzung muss bestätigt werden.";
   }
 
-  if (!contributionRulesAccepted) {
+  if (
+    !contributionRulesAccepted
+  ) {
     errors.contributionRulesAccepted =
       "Die Beitragsordnung muss bestätigt werden.";
   }
 
   if (
-    Object.keys(errors).length > 0 ||
+    Object.keys(errors).length >
+      0 ||
     !birthDate ||
     !membershipType
   ) {
     return {
       success: false,
+
       message:
         "Bitte prüfe die markierten Angaben.",
+
       errors,
     };
   }
 
   const existingOpenApplication =
-    await prisma.membershipApplication.findFirst({
-      where: {
-        email,
-        status: {
-          in: [
-            "PENDING",
-            "IN_REVIEW",
-            "APPROVED",
-          ],
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
+    await prisma
+      .membershipApplication
+      .findFirst({
+        where: {
+          email,
 
-  if (existingOpenApplication) {
+          status: {
+            in: [
+              "PENDING",
+              "IN_REVIEW",
+              "APPROVED",
+            ],
+          },
+        },
+
+        select: {
+          id: true,
+        },
+      });
+
+  if (
+    existingOpenApplication
+  ) {
     return {
       success: false,
+
       message:
         "Für diese E-Mail-Adresse besteht bereits ein offener oder genehmigter Antrag.",
+
       errors: {
         email:
           "Für diese E-Mail-Adresse besteht bereits ein Antrag.",
@@ -439,73 +560,94 @@ export async function submitMembershipApplication(
     };
   }
 
-  await prisma.membershipApplication.create({
-    data: {
-      firstName,
-      lastName,
-      birthDate,
+  await prisma
+    .membershipApplication
+    .create({
+      data: {
+        firstName,
+        lastName,
+        birthDate,
 
-      email,
-      phone,
+        email,
+        phone,
 
-      street,
-      houseNumber,
-      postalCode,
-      city,
-      country: "Deutschland",
+        street,
+        houseNumber,
+        postalCode,
+        city,
+        country:
+          "Deutschland",
 
-      membershipType,
+        membershipType,
 
-      occupation,
-      railwayQualification,
-      telegramUsername,
+        occupation,
+        railwayQualification,
+        telegramUsername,
 
-      emergencyContactName,
-      emergencyContactPhone,
+        emergencyContactName,
+        emergencyContactPhone,
 
-      isMinor,
+        isMinor,
 
-      guardianFirstName:
-        isMinor ? guardianFirstName : null,
+        guardianFirstName:
+          isMinor
+            ? guardianFirstName
+            : null,
 
-      guardianLastName:
-        isMinor ? guardianLastName : null,
+        guardianLastName:
+          isMinor
+            ? guardianLastName
+            : null,
 
-      guardianEmail:
-        isMinor ? guardianEmail : null,
+        guardianEmail:
+          isMinor
+            ? guardianEmail
+            : null,
 
-      guardianPhone:
-        isMinor ? guardianPhone : null,
+        guardianPhone:
+          isMinor
+            ? guardianPhone
+            : null,
 
-      guardianRelationship:
-        isMinor ? guardianRelationship : null,
+        guardianRelationship:
+          isMinor
+            ? guardianRelationship
+            : null,
 
-      guardianNameConfirmation:
-        isMinor
-          ? guardianNameConfirmation
-          : null,
+        guardianNameConfirmation:
+          isMinor
+            ? guardianNameConfirmation
+            : null,
 
-      guardianConsentAccepted:
-        isMinor && guardianConsentAccepted,
+        guardianConsentAccepted:
+          isMinor &&
+          guardianConsentAccepted,
 
-      guardianAuthorityConfirmed:
-        isMinor && guardianAuthorityConfirmed,
+        guardianAuthorityConfirmed:
+          isMinor &&
+          guardianAuthorityConfirmed,
 
-      guardianConsentAt:
-        isMinor ? new Date() : null,
+        guardianConsentAt:
+          isMinor
+            ? new Date()
+            : null,
 
-      message,
+        message,
 
-      privacyAccepted,
-      statutesAccepted,
-      contributionRulesAccepted,
+        privacyAccepted,
+        statutesAccepted,
+        contributionRulesAccepted,
 
-      privacyVersion: "Entwurf Juli 2026",
-      statutesVersion: "Entwurf Juli 2026",
-      contributionRulesVersion:
-        "Entwurf Juli 2026",
-    },
-  });
+        privacyVersion:
+          "Entwurf Juli 2026",
+
+        statutesVersion:
+          "Entwurf Juli 2026",
+
+        contributionRulesVersion:
+          "Entwurf Juli 2026",
+      },
+    });
 
   redirect(
     "/mitmachen/antrag/erfolgreich",

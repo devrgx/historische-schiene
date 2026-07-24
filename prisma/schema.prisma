@@ -131,6 +131,10 @@ model Member {
 
   functions MemberClubFunction[]
 
+  billingProfile    MemberBillingProfile?
+membershipCharges MembershipCharge[]
+invoices           Invoice[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -326,9 +330,65 @@ enum MembershipApplicationHistoryAction {
 }
 
 enum MembershipType {
-  REGULAR
+  ADULT
   REDUCED
-  SUPPORTING
+  LEGAL_ENTITY
+  HONORARY
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum InvoiceItemType {
+  MEMBERSHIP_FEE
+  ADMISSION_FEE
+  OTHER
+  CREDIT
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  SEPA_DIRECT_DEBIT
+  CASH
+  CARD
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum PaymentAttemptStatus {
+  PENDING
+  SUBMITTED
+  SUCCEEDED
+  FAILED
+  RETURNED
+  CANCELLED
+}
+
+enum ReminderLevel {
+  PAYMENT_REMINDER
+  FIRST_REMINDER
+  FINAL_REMINDER
+}
+
+enum ReminderStatus {
+  DRAFT
+  ISSUED
+  SENT
+  SETTLED
+  CANCELLED
 }
 
 model MembershipApplication {
@@ -432,4 +492,314 @@ model MembershipApplicationHistory {
   @@index([actorUserId])
   @@index([action])
   @@map("membership_application_history")
+}
+
+model MemberBillingProfile {
+  id Int @id @default(autoincrement())
+
+  memberId Int    @unique
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  selectedMonthlyAmountCents Int?
+  monthlyFeeOverrideCents    Int?
+  admissionFeeOverrideCents  Int?
+  admissionFeeChargedAt      DateTime?
+  contributionExemptUntil    DateTime?
+
+  preferredPaymentMethod PaymentMethod @default(BANK_TRANSFER)
+
+  sepaMandateReference String?
+  sepaMandateSignedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("member_billing_profiles")
+}
+
+model MembershipCharge {
+  id Int @id @default(autoincrement())
+
+  memberId Int
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  billingYear  Int
+  billingMonth Int
+
+  membershipType  MembershipType
+  membershipLabel String
+
+  monthlyAmountCents  Int
+  admissionFeeCents   Int @default(0)
+  totalAmountCents    Int
+
+  invoiceId Int?     @unique
+  invoice   Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([memberId, billingYear, billingMonth])
+  @@index([billingYear, billingMonth])
+  @@index([memberId])
+  @@map("membership_charges")
+}
+
+model Invoice {
+  id Int @id @default(autoincrement())
+
+  invoiceNumber String @unique
+
+  memberId Int
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  status InvoiceStatus @default(DRAFT)
+
+  billingYear  Int
+  billingMonth Int
+
+  issueDate DateTime
+  dueDate   DateTime
+
+  currency String @default("EUR")
+
+  subtotalCents Int
+  totalCents    Int
+  paidCents     Int @default(0)
+  openCents     Int
+
+  recipientMembershipNumber String
+  recipientName             String
+  recipientStreet           String
+  recipientHouseNumber      String
+  recipientPostalCode       String
+  recipientCity             String
+  recipientCountry          String
+
+  issuerName        String
+  issuerStreet      String
+  issuerHouseNumber String
+  issuerPostalCode  String
+  issuerCity        String
+  issuerCountry     String
+  issuerEmail       String?
+  issuerPhone       String?
+  issuerWebsite     String?
+
+  issuerAccountHolder String?
+  issuerIban          String?
+  issuerBic           String?
+  issuerBankName      String?
+
+  contributionResolutionNote String? @db.Text
+
+  pdfStoragePath String?
+  pdfSha256      String?
+  pdfSizeBytes   Int?
+  pdfGeneratedAt DateTime?
+
+  finalizedAt     DateTime?
+  cancelledAt     DateTime?
+  cancelledReason String? @db.Text
+
+  items            InvoiceItem[]
+payments         Payment[]
+paymentAttempts  PaymentAttempt[]
+reminders        Reminder[]
+membershipCharge MembershipCharge?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId])
+  @@index([billingYear, billingMonth])
+  @@index([status])
+  @@index([issueDate])
+  @@index([dueDate])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id Int @id @default(autoincrement())
+
+  invoiceId Int
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  position Int
+  type     InvoiceItemType
+
+  description String
+  quantity    Int @default(1)
+
+  unitAmountCents  Int
+  totalAmountCents Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([invoiceId, position])
+  @@index([invoiceId])
+  @@index([type])
+  @@map("invoice_items")
+}
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  invoiceId Int
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  amountCents Int
+
+  method PaymentMethod
+  status PaymentStatus @default(COMPLETED)
+
+  paidAt DateTime
+
+  reference String?
+  note      String? @db.Text
+
+  recordedByUserId Int?
+  recordedByName   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([paidAt])
+  @@index([reference])
+  @@map("payments")
+}
+
+model PaymentAttempt {
+  id Int @id @default(autoincrement())
+
+  invoiceId Int
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  method PaymentMethod
+  status PaymentAttemptStatus @default(PENDING)
+
+  amountCents Int
+
+  requestedAt DateTime @default(now())
+  scheduledFor DateTime?
+
+  submittedAt DateTime?
+  completedAt DateTime?
+  failedAt    DateTime?
+  returnedAt  DateTime?
+  cancelledAt DateTime?
+
+  providerReference String?
+  endToEndId         String?
+
+  failureCode    String?
+  failureMessage String? @db.Text
+
+  /**
+   * Kosten, die der Bank oder dem Zahlungsdienstleister
+   * tatsächlich durch eine Rücklastschrift entstanden sind.
+   */
+  bankReturnFeeCents Int @default(0)
+
+  /**
+   * Betrag, der dem Mitglied tatsächlich weiterberechnet wird.
+   * Dieser Wert kann kleiner als die Bankgebühr oder 0 sein.
+   */
+  chargeableReturnFeeCents Int @default(0)
+
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([endToEndId])
+  @@index([providerReference])
+  @@map("payment_attempts")
+}
+
+model Reminder {
+  id Int @id @default(autoincrement())
+
+  invoiceId Int
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  reminderNumber String @unique
+
+  level  ReminderLevel
+  status ReminderStatus @default(DRAFT)
+
+  issuedAt DateTime
+  dueAt    DateTime
+
+  /**
+   * Noch offener Rechnungsbetrag zum Zeitpunkt
+   * der Erstellung der Mahnung.
+   */
+  principalCents Int
+
+  reminderFeeCents Int @default(0)
+  returnFeeCents   Int @default(0)
+  interestCents   Int @default(0)
+
+  totalOpenCents Int
+
+  /**
+   * Empfänger-Snapshot.
+   *
+   * Eine später geänderte Anschrift verändert die
+   * bereits erstellte Mahnung nicht.
+   */
+  recipientMembershipNumber String
+  recipientName             String
+  recipientStreet           String
+  recipientHouseNumber      String
+  recipientPostalCode       String
+  recipientCity             String
+  recipientCountry          String
+
+  note String? @db.Text
+
+  pdfStoragePath String?
+  pdfSha256      String?
+  pdfSizeBytes   Int?
+  pdfGeneratedAt DateTime?
+
+  sentAt      DateTime?
+  settledAt   DateTime?
+  cancelledAt DateTime?
+
+  cancellationReason String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([level])
+  @@index([dueAt])
+  @@map("reminders")
+}
+
+model InvoiceSequence {
+  id Int @id @default(autoincrement())
+
+  /**
+   * Für jedes Kalenderjahr existiert genau ein Zähler.
+   */
+  year Int @unique
+
+  /**
+   * Zuletzt vergebene laufende Nummer.
+   */
+  currentValue Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("invoice_sequences")
 }

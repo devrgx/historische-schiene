@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+
 import {
   ArrowRight,
   Banknote,
@@ -14,6 +15,10 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
+
+import type {
+  MembershipType,
+} from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/prisma";
 
@@ -31,6 +36,9 @@ export default async function AdminDashboardPage() {
     pendingApplicationCount,
     reviewApplicationCount,
     activeMemberCount,
+    openInvoiceCount,
+    overdueInvoiceCount,
+    openReminderCount,
     recentApplications,
   ] = await Promise.all([
     prisma.membershipApplication.count(),
@@ -53,11 +61,51 @@ export default async function AdminDashboardPage() {
       },
     }),
 
+    prisma.invoice.count({
+      where: {
+        status: {
+          in: [
+            "ISSUED",
+            "PARTIALLY_PAID",
+            "OVERDUE",
+          ],
+        },
+
+        openCents: {
+          gt: 0,
+        },
+      },
+    }),
+
+    prisma.invoice.count({
+      where: {
+        status: "OVERDUE",
+
+        openCents: {
+          gt: 0,
+        },
+      },
+    }),
+
+    prisma.reminder.count({
+      where: {
+        status: {
+          in: [
+            "DRAFT",
+            "ISSUED",
+            "SENT",
+          ],
+        },
+      },
+    }),
+
     prisma.membershipApplication.findMany({
       take: 5,
+
       orderBy: {
         createdAt: "desc",
       },
+
       select: {
         id: true,
         firstName: true,
@@ -70,7 +118,8 @@ export default async function AdminDashboardPage() {
   ]);
 
   const openApplicationCount =
-    pendingApplicationCount + reviewApplicationCount;
+    pendingApplicationCount +
+    reviewApplicationCount;
 
   return (
     <>
@@ -86,9 +135,12 @@ export default async function AdminDashboardPage() {
             </h1>
 
             <p className="mt-3 max-w-3xl leading-7 text-muted">
-              Hier laufen künftig die Mitgliederverwaltung,
-              Rechnungsstellung, Zahlungserfassung, SEPA-Lastschriften
-              und das Mahnwesen zusammen.
+              Hier laufen die
+              Mitgliederverwaltung,
+              Rechnungsstellung,
+              Zahlungserfassung,
+              SEPA-Lastschriften und das
+              Mahnwesen zusammen.
             </p>
           </div>
 
@@ -111,7 +163,7 @@ export default async function AdminDashboardPage() {
           value={activeMemberCount}
           description="Derzeit im Verein aktiv"
           icon={Users}
-          href={undefined}
+          href="/admin/mitglieder"
         />
 
         <DashboardStat
@@ -120,23 +172,35 @@ export default async function AdminDashboardPage() {
           description="Eingegangen oder in Prüfung"
           icon={ClipboardList}
           href="/admin/antraege"
-          highlight={openApplicationCount > 0}
+          highlight={
+            openApplicationCount > 0
+          }
         />
 
         <DashboardStat
           label="Offene Rechnungen"
-          value="–"
-          description="Finanzmodul noch nicht aktiv"
+          value={openInvoiceCount}
+          description={
+            overdueInvoiceCount > 0
+              ? `${overdueInvoiceCount} davon überfällig`
+              : "Derzeit offene Forderungen"
+          }
           icon={FileText}
-          href={undefined}
+          href="/admin/rechnungen"
+          highlight={
+            overdueInvoiceCount > 0
+          }
         />
 
         <DashboardStat
           label="Offene Mahnungen"
-          value="–"
-          description="Mahnwesen noch nicht aktiv"
+          value={openReminderCount}
+          description="Entwürfe und versendete Mahnungen"
           icon={MailWarning}
           href={undefined}
+          highlight={
+            openReminderCount > 0
+          }
         />
       </section>
 
@@ -175,7 +239,8 @@ export default async function AdminDashboardPage() {
               </h2>
 
               <p className="mt-1 text-sm text-muted">
-                Die zuletzt eingegangenen Anträge
+                Die zuletzt eingegangenen
+                Anträge
               </p>
             </div>
 
@@ -190,36 +255,57 @@ export default async function AdminDashboardPage() {
 
           {recentApplications.length > 0 ? (
             <div className="divide-y divide-line">
-              {recentApplications.map((application) => (
-                <Link
-                  key={application.id}
-                  href={`/admin/antraege/${application.id}`}
-                  className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-surface-hover sm:px-6"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft font-bold text-accent-light">
-                      {application.firstName.charAt(0)}
-                      {application.lastName.charAt(0)}
-                    </span>
+              {recentApplications.map(
+                (application) => (
+                  <Link
+                    key={application.id}
+                    href={`/admin/antraege/${application.id}`}
+                    className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 transition hover:bg-surface-hover sm:px-6"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-soft font-bold text-accent-light">
+                        {application.firstName.charAt(
+                          0,
+                        )}
 
-                    <div className="min-w-0">
-                      <p className="truncate font-semibold text-content">
-                        {application.firstName}{" "}
-                        {application.lastName}
-                      </p>
+                        {application.lastName.charAt(
+                          0,
+                        )}
+                      </span>
 
-                      <p className="mt-1 text-sm text-muted">
-                        {membershipTypeLabels[
-                          application.membershipType
-                        ]}{" "}
-                        · {formatDate(application.createdAt)}
-                      </p>
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-content">
+                          {
+                            application.firstName
+                          }{" "}
+                          {
+                            application.lastName
+                          }
+                        </p>
+
+                        <p className="mt-1 text-sm text-muted">
+                          {
+                            membershipTypeLabels[
+                              application
+                                .membershipType
+                            ]
+                          }{" "}
+                          ·{" "}
+                          {formatDate(
+                            application.createdAt,
+                          )}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  <ApplicationStatus status={application.status} />
-                </Link>
-              ))}
+                    <ApplicationStatus
+                      status={
+                        application.status
+                      }
+                    />
+                  </Link>
+                ),
+              )}
             </div>
           ) : (
             <div className="px-6 py-14 text-center">
@@ -233,7 +319,8 @@ export default async function AdminDashboardPage() {
               </h3>
 
               <p className="mt-2 text-sm text-muted">
-                Neue Mitgliedsanträge erscheinen automatisch hier.
+                Neue Mitgliedsanträge
+                erscheinen automatisch hier.
               </p>
             </div>
           )}
@@ -245,15 +332,23 @@ export default async function AdminDashboardPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Diese Bereiche werden nach der Mitgliederverwaltung
-            schrittweise eingerichtet.
+            Beitragsrechnungen,
+            Zahlungseingänge,
+            SEPA-Lastschriften und Mahnungen
+            zentral verwalten.
           </p>
 
           <div className="mt-6 space-y-3">
             <FinanceModule
               label="Rechnungen"
-              description="Beiträge und Einzelrechnungen erstellen"
+              description="Monatliche Beitragsrechnungen erzeugen und verwalten"
               icon={FileText}
+              href="/admin/rechnungen"
+              badge={
+                openInvoiceCount > 0
+                  ? openInvoiceCount.toString()
+                  : undefined
+              }
             />
 
             <FinanceModule
@@ -264,14 +359,19 @@ export default async function AdminDashboardPage() {
 
             <FinanceModule
               label="SEPA-Lastschriften"
-              description="Mandate und Einzüge verwalten"
+              description="Mandate, Einzüge und Rücklastschriften verwalten"
               icon={CreditCard}
             />
 
             <FinanceModule
               label="Mahnwesen"
-              description="Zahlungserinnerungen und Mahnungen"
+              description="Zahlungserinnerungen und Mahnungen verwalten"
               icon={MailWarning}
+              badge={
+                openReminderCount > 0
+                  ? openReminderCount.toString()
+                  : undefined
+              }
             />
           </div>
 
@@ -282,9 +382,10 @@ export default async function AdminDashboardPage() {
             />
 
             <p className="text-sm leading-6 text-amber-100/80">
-              Die Gläubiger-ID wurde bereits beantragt. Sobald sie
-              vorliegt, wird sie zentral in der Konfiguration
-              hinterlegt.
+              Die Gläubiger-ID wurde bereits
+              beantragt. Sobald sie vorliegt,
+              wird sie zentral in der
+              Konfiguration hinterlegt.
             </p>
           </div>
         </div>
@@ -314,9 +415,11 @@ function DashboardStat({
     <div
       className={[
         "h-full rounded-2xl border p-5 transition",
+
         highlight
           ? "border-accent-border bg-accent-soft"
           : "border-line bg-surface",
+
         href
           ? "hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface-hover"
           : "",
@@ -326,6 +429,7 @@ function DashboardStat({
         <span
           className={[
             "flex h-11 w-11 items-center justify-center rounded-xl",
+
             highlight
               ? "bg-accent text-white"
               : "bg-page-soft text-muted",
@@ -335,7 +439,10 @@ function DashboardStat({
         </span>
 
         {href ? (
-          <ArrowRight size={18} className="text-subtle" />
+          <ArrowRight
+            size={18}
+            className="text-subtle"
+          />
         ) : null}
       </div>
 
@@ -357,7 +464,11 @@ function DashboardStat({
     return content;
   }
 
-  return <Link href={href}>{content}</Link>;
+  return (
+    <Link href={href}>
+      {content}
+    </Link>
+  );
 }
 
 type CompactStatProps = {
@@ -394,15 +505,27 @@ type FinanceModuleProps = {
   label: string;
   description: string;
   icon: typeof FileText;
+  href?: string;
+  badge?: string;
 };
 
 function FinanceModule({
   label,
   description,
   icon: Icon,
+  href,
+  badge,
 }: FinanceModuleProps) {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border border-line bg-page-soft p-3.5 opacity-70">
+  const content = (
+    <div
+      className={[
+        "flex items-center gap-3 rounded-xl border p-3.5 transition",
+
+        href
+          ? "border-line bg-page-soft hover:border-line-strong hover:bg-surface-hover"
+          : "border-line bg-page-soft opacity-70",
+      ].join(" ")}
+    >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface text-muted">
         <Icon size={18} />
       </span>
@@ -417,10 +540,31 @@ function FinanceModule({
         </p>
       </div>
 
-      <span className="ml-auto shrink-0 rounded-full border border-line px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-subtle">
-        Bald
-      </span>
+      {badge ? (
+        <span className="ml-auto shrink-0 rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-white">
+          {badge}
+        </span>
+      ) : href ? (
+        <ArrowRight
+          size={17}
+          className="ml-auto shrink-0 text-subtle"
+        />
+      ) : (
+        <span className="ml-auto shrink-0 rounded-full border border-line px-2 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-subtle">
+          Bald
+        </span>
+      )}
     </div>
+  );
+
+  if (!href) {
+    return content;
+  }
+
+  return (
+    <Link href={href}>
+      {content}
+    </Link>
   );
 }
 
@@ -436,7 +580,8 @@ type ApplicationStatusProps = {
 function ApplicationStatus({
   status,
 }: ApplicationStatusProps) {
-  const statusData = applicationStatusConfig[status];
+  const statusData =
+    applicationStatusConfig[status];
 
   return (
     <span
@@ -451,10 +596,14 @@ function ApplicationStatus({
 }
 
 const membershipTypeLabels = {
-  REGULAR: "Ordentliches Mitglied",
-  REDUCED: "Ermäßigtes Mitglied",
-  SUPPORTING: "Fördermitglied",
-} as const;
+  ADULT: "Volljährige Person",
+  REDUCED: "Ermäßigte Mitgliedschaft",
+  LEGAL_ENTITY: "Juristische Person",
+  HONORARY: "Ehrenmitgliedschaft",
+} satisfies Record<
+  MembershipType,
+  string
+>;
 
 const applicationStatusConfig = {
   PENDING: {
@@ -462,21 +611,25 @@ const applicationStatusConfig = {
     className:
       "border-amber-400/30 bg-amber-400/10 text-amber-200",
   },
+
   IN_REVIEW: {
     label: "In Prüfung",
     className:
       "border-blue-400/30 bg-blue-400/10 text-blue-200",
   },
+
   APPROVED: {
     label: "Genehmigt",
     className:
       "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
   },
+
   REJECTED: {
     label: "Abgelehnt",
     className:
       "border-red-400/30 bg-red-400/10 text-red-200",
   },
+
   WITHDRAWN: {
     label: "Zurückgezogen",
     className:
@@ -484,10 +637,15 @@ const applicationStatusConfig = {
   },
 } as const;
 
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+function formatDate(
+  date: Date,
+): string {
+  return new Intl.DateTimeFormat(
+    "de-DE",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    },
+  ).format(date);
 }

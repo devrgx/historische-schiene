@@ -51,6 +51,7 @@ const navigationItems: NavigationItem[] = [
   },
   {
     label: "Rechnungen",
+    href: "/admin/rechnungen",
     description: "Rechnungen erstellen",
     icon: FileText,
   },

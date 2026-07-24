@@ -1,8 +1,15 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type {
+  ReactNode,
+} from "react";
+
+import Link from "next/link";
+
 import {
   CalendarDays,
+  CircleAlert,
+  FileText,
   Mail,
   MapPin,
   Phone,
@@ -10,6 +17,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+
 import {
   useActionState,
   useState,
@@ -26,19 +34,33 @@ const initialState: MembershipApplicationState = {
 };
 
 export function MembershipApplicationForm() {
-  const [state, formAction, pending] =
-    useActionState(
-      submitMembershipApplication,
-      initialState,
+  const [
+    state,
+    formAction,
+    pending,
+  ] = useActionState(
+    submitMembershipApplication,
+    initialState,
+  );
+
+  const [
+    birthDate,
+    setBirthDate,
+  ] = useState("");
+
+  const [
+    membershipType,
+    setMembershipType,
+  ] = useState("");
+
+  const age =
+    calculateAge(
+      birthDate,
     );
 
-  const [birthDate, setBirthDate] =
-    useState("");
-
-  const age = calculateAge(birthDate);
-
   const showGuardianFields =
-    age !== null && age < 18;
+    age !== null &&
+    age < 18;
 
   return (
     <form
@@ -56,7 +78,10 @@ export function MembershipApplicationForm() {
             label="Vorname"
             autoComplete="given-name"
             icon={UserRound}
-            error={state.errors?.firstName}
+            error={
+              state.errors
+                ?.firstName
+            }
             required
           />
 
@@ -66,7 +91,10 @@ export function MembershipApplicationForm() {
             label="Nachname"
             autoComplete="family-name"
             icon={UserRound}
-            error={state.errors?.lastName}
+            error={
+              state.errors
+                ?.lastName
+            }
             required
           />
 
@@ -76,6 +104,7 @@ export function MembershipApplicationForm() {
               className="text-sm font-semibold text-content"
             >
               Geburtsdatum
+
               <span className="ml-1 text-accent-light">
                 *
               </span>
@@ -91,18 +120,26 @@ export function MembershipApplicationForm() {
                 id="birthDate"
                 name="birthDate"
                 type="date"
-                value={birthDate}
-                onChange={(event) =>
+                value={
+                  birthDate
+                }
+                onChange={(
+                  event,
+                ) =>
                   setBirthDate(
-                    event.target.value,
+                    event
+                      .target
+                      .value,
                   )
                 }
                 required
                 aria-invalid={Boolean(
-                  state.errors?.birthDate,
+                  state.errors
+                    ?.birthDate,
                 )}
                 aria-describedby={
-                  state.errors?.birthDate
+                  state.errors
+                    ?.birthDate
                     ? "birthDate-error"
                     : undefined
                 }
@@ -112,14 +149,18 @@ export function MembershipApplicationForm() {
 
             <FieldError
               id="birthDate-error"
-              message={state.errors?.birthDate}
+              message={
+                state.errors
+                  ?.birthDate
+              }
             />
 
             {showGuardianFields ? (
               <p className="mt-2 text-sm text-accent-light">
-                Minderjähriger Antrag: Die
-                Zustimmung eines Sorgeberechtigten
-                ist erforderlich.
+                Minderjähriger Antrag:
+                Die Zustimmung eines
+                Sorgeberechtigten ist
+                erforderlich.
               </p>
             ) : null}
           </div>
@@ -131,7 +172,9 @@ export function MembershipApplicationForm() {
             type="email"
             autoComplete="email"
             icon={Mail}
-            error={state.errors?.email}
+            error={
+              state.errors?.email
+            }
             required
           />
 
@@ -157,7 +200,9 @@ export function MembershipApplicationForm() {
             label="Straße"
             autoComplete="address-line1"
             icon={MapPin}
-            error={state.errors?.street}
+            error={
+              state.errors?.street
+            }
             required
           />
 
@@ -166,7 +211,10 @@ export function MembershipApplicationForm() {
             name="houseNumber"
             label="Hausnummer"
             icon={MapPin}
-            error={state.errors?.houseNumber}
+            error={
+              state.errors
+                ?.houseNumber
+            }
             required
           />
         </div>
@@ -179,7 +227,10 @@ export function MembershipApplicationForm() {
             inputMode="numeric"
             autoComplete="postal-code"
             icon={MapPin}
-            error={state.errors?.postalCode}
+            error={
+              state.errors
+                ?.postalCode
+            }
             required
           />
 
@@ -189,7 +240,9 @@ export function MembershipApplicationForm() {
             label="Ort"
             autoComplete="address-level2"
             icon={MapPin}
-            error={state.errors?.city}
+            error={
+              state.errors?.city
+            }
             required
           />
         </div>
@@ -205,6 +258,7 @@ export function MembershipApplicationForm() {
             className="text-sm font-semibold text-content"
           >
             Mitgliedsform
+
             <span className="ml-1 text-accent-light">
               *
             </span>
@@ -213,35 +267,93 @@ export function MembershipApplicationForm() {
           <select
             id="membershipType"
             name="membershipType"
-            defaultValue=""
+            value={
+              membershipType
+            }
+            onChange={(
+              event,
+            ) =>
+              setMembershipType(
+                event
+                  .target
+                  .value,
+              )
+            }
             required
+            aria-invalid={Boolean(
+              state.errors
+                ?.membershipType,
+            )}
+            aria-describedby={
+              state.errors
+                ?.membershipType
+                ? "membershipType-error"
+                : undefined
+            }
             className="mt-2 w-full rounded-xl border border-line bg-page-soft px-4 py-3 text-content outline-none transition focus:border-accent-border focus:ring-2 focus:ring-accent-soft"
           >
-            <option value="" disabled>
+            <option
+              value=""
+              disabled
+            >
               Bitte auswählen
             </option>
 
-            <option value="REGULAR">
-              Ordentliche Mitgliedschaft – 30 €
-              jährlich
+            <option value="ADULT">
+              Volljährige Person
             </option>
 
             <option value="REDUCED">
-              Ermäßigte Mitgliedschaft – 16 €
-              jährlich
-            </option>
-
-            <option value="SUPPORTING">
-              Fördermitgliedschaft – 70 € jährlich
+              Ermäßigte Mitgliedschaft
             </option>
           </select>
 
           <FieldError
+            id="membershipType-error"
             message={
-              state.errors?.membershipType
+              state.errors
+                ?.membershipType
             }
           />
         </div>
+
+        {membershipType ===
+        "REDUCED" ? (
+          <div className="mt-6 flex gap-4 rounded-2xl border border-accent-border bg-accent-soft p-5">
+            <CircleAlert
+              size={22}
+              className="mt-0.5 shrink-0 text-accent-light"
+            />
+
+            <div>
+              <p className="font-semibold text-content">
+                Ermäßigungsnachweis
+                erforderlich
+              </p>
+
+              <p className="mt-2 text-sm leading-7 text-muted">
+                Für diese Mitgliedschaft
+                benötigen wir einen
+                gültigen Nachweis. Der
+                geschützte Upload wird
+                in einem späteren
+                Ausbauschritt ergänzt.
+                Bis dahin kann der
+                Nachweis unter Angabe
+                des vollständigen Namens
+                an{" "}
+                <a
+                  href="mailto:mitglied-werden@historische-schiene.de"
+                  className="font-semibold text-accent-light underline decoration-accent-light/40 underline-offset-4 transition hover:text-content"
+                >
+                  mitglied-werden@
+                  historische-schiene.de
+                </a>{" "}
+                gesendet werden.
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-6 sm:grid-cols-2">
           <Field
@@ -288,7 +400,9 @@ export function MembershipApplicationForm() {
               state.errors
                 ?.emergencyContactName
             }
-            required={showGuardianFields}
+            required={
+              showGuardianFields
+            }
           />
 
           <Field
@@ -301,7 +415,9 @@ export function MembershipApplicationForm() {
               state.errors
                 ?.emergencyContactPhone
             }
-            required={showGuardianFields}
+            required={
+              showGuardianFields
+            }
           />
         </div>
       </FormSection>
@@ -320,13 +436,16 @@ export function MembershipApplicationForm() {
 
               <div>
                 <p className="font-semibold text-content">
-                  Zustimmung erforderlich
+                  Zustimmung
+                  erforderlich
                 </p>
 
                 <p className="mt-2 text-sm leading-7 text-muted">
-                  Die folgenden Angaben müssen
-                  durch einen Sorgeberechtigten
-                  ausgefüllt und bestätigt werden.
+                  Die folgenden Angaben
+                  müssen durch einen
+                  Sorgeberechtigten
+                  ausgefüllt und bestätigt
+                  werden.
                 </p>
               </div>
             </div>
@@ -367,7 +486,8 @@ export function MembershipApplicationForm() {
               autoComplete="email"
               icon={Mail}
               error={
-                state.errors?.guardianEmail
+                state.errors
+                  ?.guardianEmail
               }
               required
             />
@@ -380,7 +500,8 @@ export function MembershipApplicationForm() {
               autoComplete="tel"
               icon={Phone}
               error={
-                state.errors?.guardianPhone
+                state.errors
+                  ?.guardianPhone
               }
               required
             />
@@ -455,13 +576,38 @@ export function MembershipApplicationForm() {
         title="Bestätigungen"
         description="Bitte bestätige die erforderlichen Grundlagen für den Antrag."
       >
+        <div className="mb-6 flex gap-4 rounded-2xl border border-line bg-page-soft p-5">
+          <FileText
+            size={22}
+            className="mt-0.5 shrink-0 text-accent-light"
+          />
+
+          <p className="text-sm leading-7 text-muted">
+            Satzung,
+            Beitragsordnung,
+            Datenschutzhinweise und
+            weitere Unterlagen findest
+            du in unserer{" "}
+            <Link
+              href="/dokumente"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-accent-light underline decoration-accent-light/40 underline-offset-4 transition hover:text-content"
+            >
+              Dokumentenübersicht
+            </Link>
+            .
+          </p>
+        </div>
+
         <div className="space-y-4">
           <Checkbox
             id="privacyAccepted"
             name="privacyAccepted"
             label="Ich habe die Datenschutzerklärung gelesen."
             error={
-              state.errors?.privacyAccepted
+              state.errors
+                ?.privacyAccepted
             }
             required
           />
@@ -471,7 +617,8 @@ export function MembershipApplicationForm() {
             name="statutesAccepted"
             label="Ich erkenne die Satzung in ihrer jeweils gültigen Fassung an."
             error={
-              state.errors?.statutesAccepted
+              state.errors
+                ?.statutesAccepted
             }
             required
           />
@@ -505,7 +652,8 @@ export function MembershipApplicationForm() {
         ) : (
           <>
             <Send size={18} />
-            Mitgliedsantrag absenden
+            Mitgliedsantrag
+            absenden
           </>
         )}
       </button>
@@ -534,7 +682,9 @@ function FormSection({
         {description}
       </p>
 
-      <div className="mt-6">{children}</div>
+      <div className="mt-6">
+        {children}
+      </div>
     </section>
   );
 }
@@ -543,14 +693,22 @@ type FieldProps = {
   id: string;
   name: string;
   label: string;
-  type?: "text" | "email" | "tel" | "date";
+
+  type?:
+    | "text"
+    | "email"
+    | "tel"
+    | "date";
+
   placeholder?: string;
   autoComplete?: string;
+
   inputMode?:
     | "text"
     | "numeric"
     | "email"
     | "tel";
+
   icon: typeof UserRound;
   error?: string;
   required?: boolean;
@@ -594,12 +752,20 @@ function Field({
           name={name}
           type={type}
           placeholder={placeholder}
-          autoComplete={autoComplete}
-          inputMode={inputMode}
+          autoComplete={
+            autoComplete
+          }
+          inputMode={
+            inputMode
+          }
           required={required}
-          aria-invalid={Boolean(error)}
+          aria-invalid={Boolean(
+            error,
+          )}
           aria-describedby={
-            error ? `${id}-error` : undefined
+            error
+              ? `${id}-error`
+              : undefined
           }
           className="w-full rounded-xl border border-line bg-page-soft py-3 pl-12 pr-4 text-content outline-none transition placeholder:text-subtle focus:border-accent-border focus:ring-2 focus:ring-accent-soft"
         />
@@ -639,9 +805,13 @@ function Checkbox({
           name={name}
           type="checkbox"
           required={required}
-          aria-invalid={Boolean(error)}
+          aria-invalid={Boolean(
+            error,
+          )}
           aria-describedby={
-            error ? `${id}-error` : undefined
+            error
+              ? `${id}-error`
+              : undefined
           }
           className="mt-1 h-4 w-4 rounded border-line bg-page-soft"
         />
@@ -689,15 +859,21 @@ function calculateAge(
     return null;
   }
 
-  const birthDate = new Date(
-    `${birthDateValue}T00:00:00`,
-  );
+  const birthDate =
+    new Date(
+      `${birthDateValue}T00:00:00`,
+    );
 
-  if (Number.isNaN(birthDate.getTime())) {
+  if (
+    Number.isNaN(
+      birthDate.getTime(),
+    )
+  ) {
     return null;
   }
 
-  const today = new Date();
+  const today =
+    new Date();
 
   let age =
     today.getFullYear() -

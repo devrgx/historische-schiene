@@ -34,3 +34,21 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+
+$headers = @{
+  Authorization = "Bearer 0760f4c9af3376b793cebe8439ae92963674d3d20d666cbf6328fd31c654644598eb45b687de2616781a09d6ddb11225"
+}
+
+$body = @{
+  billingYear = 2026
+  billingMonth = 7
+} | ConvertTo-Json
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://localhost:3000/api/internal/billing/monthly" `
+  -Headers $headers `
+  -ContentType "application/json" `
+  -Body $body

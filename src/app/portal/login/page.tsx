@@ -110,7 +110,7 @@ export default async function PortalLoginPage({
               autoComplete="current-password"
               placeholder="Dein Passwort"
               required
-              minLength={12}
+              minLength={6}
               className="w-full rounded-xl border border-line bg-page-soft py-3 pl-12 pr-4 text-content outline-none transition placeholder:text-subtle focus:border-accent-border focus:ring-2 focus:ring-accent-soft"
             />
           </div>
